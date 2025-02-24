@@ -1,0 +1,38 @@
+{{- if and (not .Values.useStatefulSet) .Values.persistence_static.enabled (not .Values.persistence_static.existingClaim) (eq .Values.persistence_static.type "pvc")}}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ include "wordpress.fullname" . }}
+  labels:
+    {{- include "wordpress.labels" . | nindent 4 }}
+    {{- with .Values.persistence_static.extraPvcLabels }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+  {{- with .Values.persistence_static.annotations  }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  {{- with .Values.persistence_static.finalizers  }}
+  finalizers:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  accessModes:
+    {{- range .Values.persistence_static.accessModes }}
+    - {{ . | quote }}
+    {{- end }}
+  resources:
+    requests:
+      storage: {{ .Values.persistence_static.size | quote }}
+  {{- if and (.Values.persistence_static.lookupVolumeName) (lookup "v1" "PersistentVolumeClaim" (include "wordpress.namespace" .) (include "wordpress.fullname" .)) }}
+  volumeName: {{ (lookup "v1" "PersistentVolumeClaim" (include "wordpress.namespace" .) (include "wordpress.fullname" .)).spec.volumeName }}
+  {{- end }}
+  {{- with .Values.persistence_static.storageClassName }}
+  storageClassName: {{ . }}
+  {{- end }}
+  {{- with .Values.persistence_static.selectorLabels }}
+  selector:
+    matchLabels:
+    {{- toYaml . | nindent 6 }}
+  {{- end }}
+{{- end }}

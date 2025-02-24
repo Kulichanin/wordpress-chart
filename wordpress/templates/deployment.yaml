@@ -1,0 +1,78 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "wordpress.fullname" . }}
+  labels:
+    {{- include "wordpress.labels" . | nindent 4 }}
+spec:
+  {{- if not .Values.autoscaling.enabled }}
+  replicas: {{ .Values.replicaCount }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "wordpress.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "wordpress.labels" . | nindent 8 }}
+        {{- with .Values.podLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: {{ .Values.webserver.name }}
+          image: "{{ .Values.webserver.repository }}:{{ .Values.webserver.tag | default "latest" }}"
+          imagePullPolicy: {{ .Values.webserver.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.webserver.port }}
+              protocol: TCP
+          volumeMounts:
+          {{- with .Values.volumeMountsStatic }}
+              {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.volumeMountsWebserver }}
+              {{- toYaml . | nindent 12 }}
+          {{- end }}
+        - name: {{ .Values.wordpress.name }}
+          image: "{{ .Values.wordpress.repository }}:{{ .Values.wordpress.tag | default "latest" }}"
+          imagePullPolicy: {{ .Values.wordpress.pullPolicy }}
+          {{- with .Values.envApp }}
+          env:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.wordpress.port }}
+              protocol: TCP
+          volumeMounts:
+          {{- with .Values.volumeMountsStatic }}
+              {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.volumeMountsApp }}
+              {{- toYaml . | nindent 12 }}
+          {{- end }}
+      {{- with .Values.volumes }}
+      volumes:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.nodeselector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
