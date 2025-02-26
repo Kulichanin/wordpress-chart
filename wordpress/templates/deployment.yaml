@@ -60,6 +60,19 @@ spec:
           {{- with .Values.volumeMountsApp }}
               {{- toYaml . | nindent 12 }}
           {{- end }}
+        - name: {{ .Values.nginx_exporter.name }}
+          image: "{{ .Values.nginx_exporter.repository }}:{{ .Values.nginx_exporter.tag | default "latest" }}"
+          imagePullPolicy: {{ .Values.nginx_exporter.pullPolicy }}
+          {{- if .Values.nginx_prometheus_command }}
+          args: 
+            {{- range .Values.nginx_prometheus_command }}
+              - {{ . | quote}}
+            {{- end }} 
+          {{- end }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.nginx_exporter.port }}
+              protocol: TCP
       {{- with .Values.volumes }}
       volumes:
         {{- toYaml . | nindent 8 }}

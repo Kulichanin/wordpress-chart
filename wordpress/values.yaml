@@ -14,12 +14,48 @@ webserver:
 
 # This sets the container image more information can be found here: https://kubernetes.io/docs/concepts/containers/images/
 wordpress:
+  name: wordpress
   repository: wordpress
   # This sets the pull policy for images.
   pullPolicy: IfNotPresent
   # Overrides the image tag whose default is the chart appVersion.
   tag: ""
   port: 8080
+
+# This sets the container image more information can be found here: https://kubernetes.io/docs/concepts/containers/images/
+nginx_exporter:
+  name: nginx-prometheus-exporter
+  repository: nginx/nginx-prometheus-exporter
+  # This sets the pull policy for images.
+  pullPolicy: IfNotPresent
+  # Overrides the image tag whose default is the chart appVersion.
+  tag: ""
+  port: 9113
+
+nginx_prometheus_command: 
+  - "--web.listen-address=:9113"
+
+envApp: 
+  - name: WORDPRESS_DB_HOST
+    valueFrom:
+      secretKeyRef:
+        name: secret_helm
+        key: mysql-host
+  - name: WORDPRESS_DB_USER
+    valueFrom:
+      secretKeyRef:
+        name: secret_helm
+        key: mysql-user
+  - name: WORDPRESS_DB_PASSWORD
+    valueFrom:
+      secretKeyRef:
+        name: secret_helm
+        key: mysql-passsword
+  - name: WORDPRESS_DB_NAME
+    valueFrom:
+      secretKeyRef:
+        name: secret_helm
+        key: mysql-db-name
 
 # This is for the secretes for pulling an image from a private repository more information can be found here: https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/
 imagePullSecrets: []
@@ -117,7 +153,7 @@ volumes:
 # Additional volumeMounts on the output Deployment definition.
 volumeMountsStatic:
   - name: static-wordpress
-    mountPath: /var/www/wordpress
+    mountPath: /var/www/html
 
 volumeMountsWebserver:
   - name: wordpressconfigmap
@@ -125,7 +161,7 @@ volumeMountsWebserver:
 
 volumeMountsApp:
   - name: uploads
-    mountPath: /usr/src/wordpress/wp-content/uploads
+mountPath: /var/www/html/wp-content/uploads 
 
 nodeSelector: {}
 
