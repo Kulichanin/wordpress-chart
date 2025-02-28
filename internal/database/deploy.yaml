@@ -1,0 +1,53 @@
+apiVersion: mysql.oracle.com/v2
+kind: InnoDBCluster
+metadata:
+  name: mysql-cluster
+  namespace: mysql-system
+spec:
+  secretName: mypwds
+  tlsUseSelfSigned: true
+  instances: 3
+  version: 8.4.4
+  router:
+    instances: 1
+    version: 8.4.4
+  datadirVolumeClaimTemplate:
+    storageClassName: nfs-sc
+    accessModes:
+      - ReadWriteOnce
+    resources:
+      requests:
+        storage: 1Gi
+  datadirPermissions:
+    fsGroupChangePolicy: Always
+    setRightsUsingInitContainer: True
+  podSpec:
+    resources:
+      requests:
+        memory: "512Mi"
+        cpu: "500m"
+      limits:
+        memory: "512Mi"
+        cpu: "500m"
+  metrics:
+    enable: true
+    image: "prom/mysqld-exporter"
+    monitor: false
+    options:
+      - "--mysqld.address=127.0.0.1:3306"
+      - "--mysqld.username=exporter"
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: mysql-cluster
+  namespace: mysql-system
+  labels:
+    release: kube-prometheus-stack
+spec:
+  endpoints:
+  - path: /metrics
+    port: metrics
+  selector:
+    matchLabels:
+      mysql.oracle.com/cluster: mysql-cluster
