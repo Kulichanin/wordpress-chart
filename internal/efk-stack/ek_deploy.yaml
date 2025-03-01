@@ -1,0 +1,196 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: max-map-count-setter
+  labels:
+    k8s-app: max-map-count-setter
+spec:
+  selector:
+    matchLabels:
+      name: max-map-count-setter
+  template:
+    metadata:
+      labels:
+        name: max-map-count-setter
+    spec:
+      initContainers:
+        - name: max-map-count-setter
+          image: docker.io/bash:5.2.21
+          resources:
+            limits:
+              cpu: 100m
+              memory: 32Mi
+          securityContext:
+            privileged: true
+            runAsUser: 0
+          command:
+            [
+              "/usr/local/bin/bash",
+              "-e",
+              "-c",
+              "echo 262144 > /proc/sys/vm/max_map_count",
+            ]
+      containers:
+        - name: sleep
+          image: docker.io/bash:5.2.21
+          command: ["sleep", "infinity"]
+---
+apiVersion: elasticsearch.k8s.elastic.co/v1
+kind: Elasticsearch
+metadata:
+  name: elastic-cluster
+  namespace: elastic-system
+spec:
+  version: 8.17.1
+  image: elastic/elasticsearch:8.17.1
+  nodeSets:
+    - name: master-nodes
+      count: 1
+      config:
+        node.roles: ["master"]
+      volumeClaimTemplates:
+        - metadata:
+            name: elasticsearch-data # Do not change this name unless you set up a volume mount for the data path.
+          spec:
+            accessModes:
+              - ReadWriteOnce
+            resources:
+              requests:
+                storage: 1Gi
+            storageClassName: nfs-client
+      podTemplate:
+        spec:
+          # This init container ensures that the max_map_count setting has been applied before starting Elasticsearch.
+          # This is not required, but is encouraged when using the previous Daemonset to set max_map_count.
+          # Do not use this if setting config.node.store.allow_mmap: false
+          securityContext:
+            runAsUser: 1000
+          containers:
+            - name: elasticsearch
+              env:
+                - name: ES_JAVA_OPTS
+                  value: "-Xms1g -Xmx1g"
+            - name: metrics
+              image: quay.io/prometheuscommunity/elasticsearch-exporter:latest
+              imagePullPolicy: IfNotPresent
+              command:
+                [
+                  "elasticsearch_exporter",
+                  "--es.uri=https://127.0.0.1:9200",
+                  "--es.ssl-skip-verify",
+                  "--es.timeout=120s",
+                ]
+              env:
+                - name: ES_USERNAME
+                  value: elastic
+                - name: ES_PASSWORD
+                  valueFrom:
+                    secretKeyRef:
+                      name: elastic-cluster-es-elastic-user
+                      key: elastic
+              ports:
+                - containerPort: 9114
+                  name: metrics
+    - name: data
+      count: 2
+      config:
+        node.roles: ["data"]
+      volumeClaimTemplates:
+        - metadata:
+            name: elasticsearch-data # Do not change this name unless you set up a volume mount for the data path.
+          spec:
+            accessModes:
+              - ReadWriteOnce
+            resources:
+              requests:
+                storage: 1Gi
+            storageClassName: nfs-client
+      podTemplate:
+        spec:
+          # In versions of Elasticsearch before 8.0.0, the Elastisearch container is run as root and its entrypoint is responsible to run the Elasticsearch process with the elasticsearch user (defined with ID 1000).
+          # In the background, ECK uses an initContainer to make sure that the data volume is writable for the elasticsearch user. https://www.elastic.co/guide/en/cloud-on-k8s/current/k8s-security-context.html
+          securityContext:
+            runAsUser: 1000
+          containers:
+            - name: elasticsearch
+              env:
+                - name: ES_JAVA_OPTS
+                  value: "-Xms1g -Xmx1g"
+            - name: metrics
+              image: quay.io/prometheuscommunity/elasticsearch-exporter:latest
+              imagePullPolicy: IfNotPresent
+              command:
+                [
+                  "elasticsearch_exporter",
+                  "--es.uri=https://127.0.0.1:9200",
+                  "--es.ssl-skip-verify",
+                  "--es.timeout=120s",
+                ]
+              env:
+                - name: ES_USERNAME
+                  value: elastic
+                - name: ES_PASSWORD
+                  valueFrom:
+                    secretKeyRef:
+                      name: elastic-cluster-es-elastic-user
+                      key: elastic
+              ports:
+                - containerPort: 9114
+                  name: metrics
+  http:
+    service:
+      metadata:
+        labels:
+          service: "elastic-cluster-es-http"
+      spec:
+        ports:
+          - name: https
+            port: 9200
+            protocol: TCP
+            targetPort: 9200
+          - name: metrics
+            port: 9114
+            protocol: TCP
+            targetPort: 9114
+---
+apiVersion: kibana.k8s.elastic.co/v1
+kind: Kibana
+metadata:
+  name: elastic-cluster
+  namespace: elastic-system
+spec:
+  version: 8.17.1
+  image: kibana:8.17.1
+  count: 1
+  elasticsearchRef:
+    name: elastic-cluster
+    namespace: elastic-system
+  http:
+    tls:
+      selfSignedCertificate:
+        disabled: true
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: kibana-ingress
+  namespace: elastic-system
+  annotations:
+    cert-manager.io/cluster-issuer: "letsencrypt"
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: kibana.kubefinal.rbr-kubernetes.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: elastic-cluster-kb-http
+                port:
+                  number: 5601
+  tls:
+    - hosts:
+        - kibana.kubefinal.rbr-kubernetes.com
+      secretName: elastic-cluster-kibana-ssl

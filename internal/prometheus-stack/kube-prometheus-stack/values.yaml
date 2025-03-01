@@ -1287,7 +1287,7 @@ grafana:
     storageClassName: nfs-client
     accessModes:
       - ReadWriteOnce
-    size: 5Gi
+    size: 1Gi
     finalizers:
       - kubernetes.io/pvc-protection
 

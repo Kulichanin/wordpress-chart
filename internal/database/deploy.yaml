@@ -12,7 +12,7 @@ spec:
     instances: 1
     version: 8.4.4
   datadirVolumeClaimTemplate:
-    storageClassName: nfs-sc
+    storageClassName: nfs-client
     accessModes:
       - ReadWriteOnce
     resources:

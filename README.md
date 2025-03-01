@@ -3,10 +3,20 @@
 ## NSF Provisioner
 
 ```bash
+sudo apt install -y nfs-common nfs4-acl-tools 
+```
+
+Получение helm chart
+
+```bash
 helm repo add nfs-subdir-external-provisioner https://kubernetes-sigs.github.io/nfs-subdir-external-provisioner/
+helm pull nfs-subdir-external-provisioner/nfs-subdir-external-provisioner --untar
+```
+
+```bash
 helm install --namespace nfs-provisioner --create-namespace nfs-subdir-external-provisioner nfs-subdir-external-provisioner/nfs-subdir-external-provisioner \
-    --set nfs.server=x.x.x.x \
-    --set nfs.path=/exported/path 
+    --set nfs.server=10.128.0.23 \
+    --set nfs.path=/opt/nfs 
 ```
 
 ## Database
@@ -35,24 +45,6 @@ helm install nginx-metrics ingress-nginx/ingress-nginx --create-namespace \
  --set controller.ingressClassResource.name="nginx-metrics" 
 ```
 
-```bash
-helm install nginx-logs ingress-nginx/ingress-nginx --create-namespace \
- --namespace ingress-logs --set controller.ingressClass="nginx-logs" \
- --set controller.ingressClassResource.name="nginx-logs" 
-```
-
-```bash
-helm install nginx-prod ingress-nginx/ingress-nginx --create-namespace \
- --namespace ingress-prod --set controller.ingressClass="nginx-prod" \
- --set controller.ingressClassResource.name="nginx-prod" 
-```
-
-```bash
-helm install nginx-dev ingress-nginx/ingress-nginx --create-namespace \
- --namespace ingress-dev --set controller.ingressClass="nginx-dev" \
- --set controller.ingressClassResource.name="nginx-dev" 
-```
-
 Установка Cert-manager
 
 ```bash
@@ -72,6 +64,8 @@ helm install \
 
 ## Prometheus stack
 
+Получение helm chart
+
 ```bash
 helm pull prometheus-community/prometheus-adapter --untar
 ```
@@ -80,4 +74,28 @@ helm pull prometheus-community/prometheus-adapter --untar
 
 ```bash
 helm install kube-prometheus-stack --namespace monitoring --create-namespace --wait -f kube-prometheus-stack/values.yaml ./kube-prometheus-stack
+```
+
+## EFK stack
+
+Для развертывания elastik + kibana используется eck-operator.
+
+```bash
+helm install elastic-operator eck-operator -n elastic-system --create-namespace
+```
+
+В ek_deploy.yaml описан деплой elastik + kibana
+
+Для развертывания fluent-bit необходимо скачать репозиторий c помощью helm
+
+```bash
+helm repo add fluent https://fluent.github.io/helm-charts
+helm repo update
+helm pull fluent/fluent-bit --untar
+```
+
+Установка с корректной конфигурацией
+
+```bash
+helm install fluent-bit -n elastic-system ./fluent-bit/ -f fluent-bit/values.yaml
 ```

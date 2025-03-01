@@ -1,7 +1,0 @@
-list_Chart:
-  - Provisoner
-  - Database
-  - CertManager
-  - EFK
-  - Ingress
-  - Prometheus
