@@ -46,8 +46,8 @@ metadata:
     release: kube-prometheus-stack
 spec:
   endpoints:
-  - path: /metrics
-    port: metrics
+    - path: /metrics
+      port: metrics
   selector:
     matchLabels:
       mysql.oracle.com/cluster: mysql-cluster

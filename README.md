@@ -50,18 +50,6 @@ helm install \
 
 Создание менеджера сертификатов для nginx-ingress-controller описано в `internal/cert-manager & nginx-ingress-controller/deploy.yaml`
 
-## Database
-
-Установка mysql оператора для работы с кластером `InnoDBCluster`
-
-```bash
-helm install mysql-operator mysql-operator/mysql-operator --namespace mysql-system --create-namespace
-```
-
-Cекрет для создания пользователя root mysql находится в `internal/database/mypwds.sec.yaml` и зашифрован sops
-
-Манифест с кластером описан в `internal/database/deploy.yaml`
-
 ## Prometheus stack
 
 Получение helm chart
@@ -75,6 +63,23 @@ helm pull prometheus-community/prometheus-adapter --untar
 ```bash
 helm install kube-prometheus-stack --namespace monitoring --create-namespace --wait -f kube-prometheus-stack/values.yaml ./kube-prometheus-stack
 ```
+
+## Database
+
+Установка mysql оператора для работы с кластером `InnoDBCluster`
+
+```bash
+helm repo add mysql-operator https://mysql.github.io/mysql-operator/
+helm repo update
+```
+
+```bash
+helm install mysql-operator mysql-operator/mysql-operator --namespace mysql-system --create-namespace
+```
+
+Cекрет для создания пользователя root mysql находится в `internal/database/mypwds.sec.yaml` и зашифрован sops
+
+Манифест с кластером описан в `internal/database/deploy.yaml`
 
 ## EFK stack
 
