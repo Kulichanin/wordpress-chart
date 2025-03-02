@@ -356,9 +356,22 @@ extraPorts: []
 #     name: tcp
 #     nodePort: 30517
 
-extraVolumes: []
+extraVolumes:
+  - name: elastic-certs
+    secret:
+      secretName: elastic-cluster-es-http-certs-internal
+      items:
+        - key: ca.crt
+          path: certs/es.ca
+        - key: tls.crt
+          path: certs/es.crt
+        - key: tls.key
+          path: certs/es.key
 
-extraVolumeMounts: []
+extraVolumeMounts:
+  - name: elastic-certs
+    mountPath: "/opt/"
+    readOnly: true
 
 updateStrategy: {}
 #   type: RollingUpdate

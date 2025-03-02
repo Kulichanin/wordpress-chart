@@ -15,21 +15,9 @@ helm pull nfs-subdir-external-provisioner/nfs-subdir-external-provisioner --unta
 
 ```bash
 helm install --namespace nfs-provisioner --create-namespace nfs-subdir-external-provisioner nfs-subdir-external-provisioner/nfs-subdir-external-provisioner \
-    --set nfs.server=10.128.0.23 \
+    --set nfs.server=x.x.x.x \
     --set nfs.path=/opt/nfs 
 ```
-
-## Database
-
-Установка mysql оператора для работы с кластером `InnoDBCluster`
-
-```bash
-helm install mysql-operator mysql-operator/mysql-operator --namespace mysql-system --create-namespace
-```
-
-Cекрет для создания пользователя root mysql находится в `internal/database/mypwds.sec.yaml` и зашифрован sops
-
-Манифест с кластером описан в `internal/database/deploy.yaml`
 
 ## Cert-manager & nginx-ingress-controller
 
@@ -62,6 +50,18 @@ helm install \
 
 Создание менеджера сертификатов для nginx-ingress-controller описано в `internal/cert-manager & nginx-ingress-controller/deploy.yaml`
 
+## Database
+
+Установка mysql оператора для работы с кластером `InnoDBCluster`
+
+```bash
+helm install mysql-operator mysql-operator/mysql-operator --namespace mysql-system --create-namespace
+```
+
+Cекрет для создания пользователя root mysql находится в `internal/database/mypwds.sec.yaml` и зашифрован sops
+
+Манифест с кластером описан в `internal/database/deploy.yaml`
+
 ## Prometheus stack
 
 Получение helm chart
@@ -81,6 +81,10 @@ helm install kube-prometheus-stack --namespace monitoring --create-namespace --w
 Для развертывания elastik + kibana используется eck-operator.
 
 ```bash
+git clone https://github.com/elastic/cloud-on-k8s.git
+```
+
+```bash
 helm install elastic-operator eck-operator -n elastic-system --create-namespace
 ```
 
@@ -98,4 +102,10 @@ helm pull fluent/fluent-bit --untar
 
 ```bash
 helm install fluent-bit -n elastic-system ./fluent-bit/ -f fluent-bit/values.yaml
+```
+
+Получим пароль из соответствующего секрета
+
+```bash
+kubectl get secrets elastic-cluster-es-elastic-user -o json | jq -r .data.elastic | base64 -d
 ```
