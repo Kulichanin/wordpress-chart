@@ -114,3 +114,33 @@ helm install fluent-bit -n elastic-system ./fluent-bit/ -f fluent-bit/values.yam
 ```bash
 kubectl get secrets elastic-cluster-es-elastic-user -o json | jq -r .data.elastic | base64 -d
 ```
+
+## Приложение Wordpress
+
+Перед развертыванием приложения подготовим базу данных
+
+```bash
+kubectl port-forward service/mysql-cluster 3306 -n mysql-cluster
+```
+
+```bash
+mysql -h127.0.0.1 -u root -pPASS -e "CREATE DATABASE DB_NAME; CREATE USER "USER_APP"@"%" IDENTIFIED BY PASS_APP"; GRANT ALL PRIVILEGES ON NAME_DB.\* TO "USER_APP"@"%"; FLUSH PRIVILEGES; EXIT"
+```
+
+Создадим секрет для работу через `helm secret`
+
+```bash
+sops --encrypted-suffix private_env_variables --pgp key_fp wordpress/data.sec.yaml
+```
+
+Пример секрета
+
+```yaml
+public_env_variables:
+  WORDPRESS_DEBUG: 1
+private_env_variables:
+  WORDPRESS_DB_HOST: "svc.cluster.local"
+  WORDPRESS_DB_USER: "user"
+  WORDPRESS_DB_PASSWORD: "user"
+  WORDPRESS_DB_NAME: "user"
+```

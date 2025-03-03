@@ -45,10 +45,18 @@ spec:
         - name: {{ .Values.wordpress.name }}
           image: "{{ .Values.wordpress.repository }}:{{ .Values.wordpress.tag | default "latest" }}"
           imagePullPolicy: {{ .Values.wordpress.pullPolicy }}
-          {{- with .Values.envApp }}
           env:
-            {{- toYaml . | nindent 12 }}
-          {{- end }}
+          {{- range $key, $value := .Values.public_env_variables }}
+          - name: {{ $key}}
+            value: {{ $value | quote }}
+          {{- end }}  
+          {{- range $key, $value := .Values.private_env_variables }}
+          - name: {{ $key}}
+            valueFrom:
+              secretKeyRef:
+                name: {{ $.Chart.Name }}-secret
+                key: {{ $key }}
+          {{- end }}  
           ports:
             - name: http
               containerPort: {{ .Values.wordpress.port }}

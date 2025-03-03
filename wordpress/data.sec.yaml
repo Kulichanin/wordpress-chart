@@ -1,0 +1,36 @@
+public_env_variables:
+    WORDPRESS_DEBUG: 1
+private_env_variables:
+    WORDPRESS_DB_HOST: ENC[AES256_GCM,data:Eu6LBd+fZzVH9+rEiIOESVZPyye5qLLof/w4xbQvtfPcehkBJzjEase+UBk=,iv:mV+gKODfzgK+XlL0GdkmKzuLIYspFOjR8wuWSHk8LiY=,tag:pkqGm+991cPDfC0sU/4Slw==,type:str]
+    WORDPRESS_DB_USER: ENC[AES256_GCM,data:Wm1D3Sk7QfOm,iv:nGF/RMxPn25pfwTwwqUlfZTrJ2NppuvNsRUa2txGqkg=,tag:ZyHPr9lUmcIuK5WOvqILzQ==,type:str]
+    WORDPRESS_DB_PASSWORD: ENC[AES256_GCM,data:aJOQ1ZZ0Zk/Wd8F5AA==,iv:2/WH+27P02zThUs5t2S8r7oncj4wvghO5Fg0EupcwgY=,tag:dDy/X3AFPUSGtKL6/h3b0g==,type:str]
+    WORDPRESS_DB_NAME: ENC[AES256_GCM,data:Vreg50hFLc0UNJlX,iv:6s6shvOjl1BLEYKRbaacoUFd5Q3aFdX8t7L7r9i57tg=,tag:OcsPvVQbmLd4QIILll3/ow==,type:str]
+sops:
+    kms: []
+    gcp_kms: []
+    azure_kv: []
+    hc_vault: []
+    age: []
+    lastmodified: "2025-03-03T15:20:37Z"
+    mac: ENC[AES256_GCM,data:7CXbGKJwekVTVwi2kRJXjP9lRFWs/UNfgw8LOWJY4oj3pYXwui8b6uUPWTjUnd2EskKJWUi/08qQCE2WdEvo5H2NRko4P8TXer+wcRnFBFrSWUbO7AQ400D24hNLJssYJOlj5kqs9FdFOvQ7tdECPYowak1XBxJxfcYyJ33KKHg=,iv:7jun1rJbD38ir/1o0Sc3hoDaft4E80rWyTSLMk6ce2Y=,tag:Fa/fqSS5+E1zZZGzhAaYBg==,type:str]
+    pgp:
+        - created_at: "2025-03-03T15:19:39Z"
+          enc: |-
+            -----BEGIN PGP MESSAGE-----
+
+            hQGMA934PdqfM2jNAQv/UrWPIfdsPTKVRalUOCbzGE1TqJT/Jsvax465owGveJv6
+            +Gb9YKEP7svBvj5TyfMvaCSkzdhEYRNuN1ko2EDDbXQbSvNSrR4GnFQ4M/K+3Bco
+            8zdWa7NFuN5BExHZlV/aazVw2JWYjh4ubCxRsD6w/0fjnu0LoiqFcagPeuJTlAVf
+            u1vUAydxu5s8wakVGzuSdMfaW+KjGxWm8WJLhChtecrHnl0/Y8nEGr5GE72RC2Bs
+            hulYTn3PJDMccLVlkN6isDMGIAlIc/3the0jdiAZi6QzC3mZhfMJDQQM6pZUFzb4
+            iyihTCAa6Y5tTzY9UvXywDGZgbCaRhSp+SU84VCDLVniUfJq8pdOgy/Uvv1qGmBp
+            TCrp/davMQL9MS+Sh+fJ0h6Xp5FWBHxKQCRODyvahmRm6Z6xo2qK3I/JzwLqOl+s
+            m94P9YYuk9McOMLbDr7l/2lMFj8KfuTfgdVYuhOh3lpG8RZ85QjezjTPU3pF030r
+            t2mqkLwqgXMWYJgYjM6A1GgBCQIQ/Gjg5QKpZpJonyazDS1Li4Ki3Ea3QJh0a6Q3
+            Xh+3KrrC9Mzm9SWeHcRALYVHXfadXwOlHK6rWZV37Ku2hZzFxj+n/T45GYMJa+dF
+            UAYqohHjawd8u40Q2HlRdZTKxnU3RNV6zw==
+            =VqFe
+            -----END PGP MESSAGE-----
+          fp: C3F81A47DA41B5074DA36BE9167D6BB0708605CF
+    encrypted_suffix: private_env_variables
+    version: 3.9.2
