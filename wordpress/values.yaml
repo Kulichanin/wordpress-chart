@@ -19,12 +19,12 @@ wordpress:
   # This sets the pull policy for images.
   pullPolicy: IfNotPresent
   # Overrides the image tag whose default is the chart appVersion.
-  tag: ""
+  tag: "php8.3-fpm"
   port: 8080
 
 # This sets the container image more information can be found here: https://kubernetes.io/docs/concepts/containers/images/
 nginx_exporter:
-  name: nginx-prometheus-exporter
+  name: nginx-exporter
   repository: nginx/nginx-prometheus-exporter
   # This sets the pull policy for images.
   pullPolicy: IfNotPresent
@@ -68,7 +68,7 @@ securityContext:
 # This is for setting up a service more information can be found here: https://kubernetes.io/docs/concepts/services-networking/service/
 service:
   # This sets the service type more information can be found here: https://kubernetes.io/docs/concepts/services-networking/service/#publishing-services-service-types
-  type: ClusterIP
+  type: LoadBalancer
   # This sets the ports more information can be found here: https://kubernetes.io/docs/concepts/services-networking/service/#field-spec-ports
   port: 80
 
@@ -121,32 +121,30 @@ autoscaling:
   targetCPUUtilizationPercentage: 80
   # targetMemoryUtilizationPercentage: 80
 
-# Additional volumes on the output Deployment definition.
-
-# Additional volumes on the output Deployment definition.
-volumes:
-  - name: uploads
-    configMap:
-      name: servers-list
-  - name: wordpressconfigmap
-    configMap:
-      name: wordpressconfigmap
-  - name: static-wordpress
-    persistentVolumeClaim:
-      claimName: pvc-app
-
 # Additional volumeMounts on the output Deployment definition.
 volumeMountsStatic:
   - name: static-wordpress
     mountPath: /var/www/html
-
 volumeMountsWebserver:
-  - name: wordpressconfigmap
-    mountPath: /etc/nginx/conf.d/wordpress.conf
-
+  - name: wordpress-nginx
+    mountPath: /etc/nginx/conf.d/
+    readOnly: true
 volumeMountsApp:
-  - name: uploads
-mountPath: /var/www/html/wp-content/uploads
+  - name: uploads-wordpress
+    mountPath: /var/www/html/wp-content/uploads
+
+
+# Additional volumes on the output Deployment definition.
+volumes:
+  - name: wordpress-nginx
+    configMap:
+      name: wordpress-nginx
+  - name: static-wordpress
+    persistentVolumeClaim:
+      claimName: pvc-static
+  - name: uploads-wordpress
+    persistentVolumeClaim:
+      claimName: pvc-upload
 
 nodeSelector: {}
 
@@ -160,7 +158,7 @@ affinity: {}
 persistence_static:
   type: pvc
   enabled: true
-  storageClassName: nfs-client
+  storageClassName: nfs-sc
   accessModes:
     - ReadWriteMany
   size: 1Gi
@@ -186,13 +184,14 @@ persistence_static:
     ## here and the sum of memory limits of all containers in a pod
     ##
     # sizeLimit: 300Mi
+
 persistence_upload:
   type: pvc
   enabled: true
-  storageClassName: nfs-client
+  storageClassName: nfs-sc
   accessModes:
     - ReadWriteMany
-  size: 30Gi
+  size: 10Gi
   # annotations: {}
   finalizers:
     - kubernetes.io/pvc-protection
