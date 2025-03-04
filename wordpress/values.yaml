@@ -34,6 +34,7 @@ nginx_exporter:
 
 nginx_prometheus_command:
   - "--web.listen-address=:9113"
+  - "--nginx.scrape-uri=http://localhost/stub_status"
 
 public_env_variables: {}
 
@@ -132,7 +133,6 @@ volumeMountsWebserver:
 volumeMountsApp:
   - name: uploads-wordpress
     mountPath: /var/www/html/wp-content/uploads
-
 
 # Additional volumes on the output Deployment definition.
 volumes:
