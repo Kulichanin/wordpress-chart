@@ -58,7 +58,7 @@ spec:
                 key: {{ $key }}
           {{- end }}  
           ports:
-            - name: http
+            - name: wordpress
               containerPort: {{ .Values.wordpress.port }}
               protocol: TCP
           volumeMounts:
@@ -78,7 +78,7 @@ spec:
             {{- end }} 
           {{- end }}
           ports:
-            - name: http
+            - name: metrics
               containerPort: {{ .Values.nginx_exporter.port }}
               protocol: TCP
       {{- with .Values.volumes }}

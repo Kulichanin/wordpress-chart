@@ -3,4 +3,4 @@ kind: ConfigMap
 metadata:
   name: wordpress-nginx
 data:
-{{ (.Files.Glob "*.conf").AsConfig | indent 2 }}
+{{ (.Files.Glob "conf/*.conf").AsConfig | indent 2 }}

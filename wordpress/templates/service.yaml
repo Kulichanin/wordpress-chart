@@ -4,12 +4,19 @@ metadata:
   name: {{ include "wordpress.fullname" . }}
   labels:
     {{- include "wordpress.labels" . | nindent 4 }}
+    service: {{ include "wordpress.fullname" . }}
 spec:
   type: {{ .Values.service.type }}
   ports:
-    - port: {{ .Values.service.port }}
+    - port: {{ .Values.webserver.port }}
       targetPort: http
       protocol: TCP
       name: http
+    {{- if and .Values.metrics.enabled }}  
+    - port: {{ .Values.nginx_exporter.port }}
+      targetPort: metrics
+      protocol: TCP
+      name: metrics
+    {{- end }}  
   selector:
     {{- include "wordpress.selectorLabels" . | nindent 4 }}

@@ -20,7 +20,7 @@ wordpress:
   pullPolicy: IfNotPresent
   # Overrides the image tag whose default is the chart appVersion.
   tag: "php8.3-fpm"
-  port: 8080
+  port: 9000
 
 # This sets the container image more information can be found here: https://kubernetes.io/docs/concepts/containers/images/
 nginx_exporter:
@@ -34,7 +34,7 @@ nginx_exporter:
 
 nginx_prometheus_command:
   - "--web.listen-address=:9113"
-  - "--nginx.scrape-uri=http://localhost/stub_status"
+  - "--nginx.scrape-uri=http://127.0.0.1/nginx_status"
 
 public_env_variables: {}
 
@@ -214,3 +214,12 @@ persistence_upload:
     ## here and the sum of memory limits of all containers in a pod
     ##
     # sizeLimit: 300Mi
+
+metrics:
+  enabled: true
+  releasePrometheus: kube-prometheus-stack  
+  serviceMonitor:
+    interval: {}
+  prometheusSpec:
+    portName: metrics
+    routePrefix: /
