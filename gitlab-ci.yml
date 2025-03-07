@@ -1,0 +1,30 @@
+.deploy_template:
+  stage: deploy
+  image: cr.yandex/crpak1e8v8fi4qtvc427/docker-images/helm-deployer/20-11-2024
+  rules:
+    - if: $CI_ENVIRONMENT_NAME == "dev"
+      variables:                              
+        KUBECONFIG: $KUBECONFIG_dev
+    - if: $CI_ENVIRONMENT_NAME == "prod"
+      variables:                              
+        KUBECONFIG: $KUBECONFIG_prod
+  script:
+    # Setup Kubeconfig
+    - mkdir -p $HOME/.kube
+    - cat $KUBECONFIG > $HOME/.kube/config
+    # Setup GPG for Helm secrets
+    - gpg --allow-secret-key-import --import $HELM_SECRET
+    # Deploy via Helm
+    - helm secrets upgrade --wait --install wordpress --namespace ${CI_ENVIRONMENT_NAME} --values wordpress/secrets.${CI_ENVIRONMENT_NAME}.yaml --values wordpress/values.yaml wordpress/
+
+dev:deploy:
+  extends: .deploy_template
+  environment:
+    name: dev
+  when: manual
+
+prod:deploy:
+  extends: .deploy_template
+  environment:
+    name: prod
+  when: manual

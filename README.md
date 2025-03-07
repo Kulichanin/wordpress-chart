@@ -177,72 +177,94 @@ kubectl create ns dev prod
 
 Создадим ServiceAccount dev-wordpress, prod-wordpress создадим роли и привяжем их к dev-wordpress, prod-wordpress. Также создадим токен для авторизации в кластере k8s
 
-<!-- !TODO Добавить роли для configmap, hpa, ingress, pvc -->
-
 ```yaml
 apiVersion: v1
 kind: ServiceAccount
 metadata:
-  name: dev-wordpress
+  name: dev-sa
   namespace: dev
 automountServiceAccountToken: true  
 ---
 apiVersion: v1
 kind: ServiceAccount
 metadata:
-  name: prod-wordpress
+  name: prod-sa
   namespace: prod
 automountServiceAccountToken: true  
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
-  name: dev-wordpress
+  name: dev-role
   namespace: dev
 rules:
   - apiGroups: [""]
     resources: ["pods"]
     verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
-  - apiGroups: ["apps"]
-    resources: ["deployments"]
-    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
-  - apiGroups: ["apps"]
-    resources: ["replicasets"]
-    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]    
   - apiGroups: [""]
     resources: ["services"]
     verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
   - apiGroups: [""]
     resources: ["secrets"]
     verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+  - apiGroups: [""]
+    resources: ["persistentvolumeclaims"]
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+  - apiGroups: [""]
+    resources: ["configmaps"]
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]  
+  - apiGroups: ["networking.k8s.io"]
+    resources: ["ingress"]
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]  
+  - apiGroups: ["autoscaling"]
+    resources: ["horizontalpodautoscalers"]
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]        
+  - apiGroups: ["apps"]
+    resources: ["deployments"]
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+  - apiGroups: ["apps"]
+    resources: ["replicasets"]
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]    
   - apiGroups: ["monitoring.coreos.com"]
     resources: ["servicemonitors"]
-    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]       
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"] 
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
-  name: prod-wordpress
+  name: prod-role
   namespace: prod
 rules:
   - apiGroups: [""]
     resources: ["pods"]
     verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+  - apiGroups: [""]
+    resources: ["services"]
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+  - apiGroups: [""]
+    resources: ["secrets"]
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+  - apiGroups: [""]
+    resources: ["persistentvolumeclaims"]
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+  - apiGroups: [""]
+    resources: ["configmaps"]
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]  
+  - apiGroups: ["networking.k8s.io"]
+    resources: ["ingress"]
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]  
+  - apiGroups: ["autoscaling"]
+    resources: ["horizontalpodautoscalers"]
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]        
   - apiGroups: ["apps"]
     resources: ["deployments"]
     verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
   - apiGroups: ["apps"]
     resources: ["replicasets"]
     verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]    
-  - apiGroups: [""]
-    resources: ["services"]
-    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
-  - apiGroups: [""]
-    resources: ["secrets"]
-    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]  
   - apiGroups: ["monitoring.coreos.com"]
     resources: ["servicemonitors"]
-    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]     
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"] 
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
@@ -288,7 +310,7 @@ metadata:
   name: prod-sa-token
   namespace: prod
   annotations:
-    kubernetes.io/service-account.name: prod-sa    
+    kubernetes.io/service-account.name: prod-sa
 ```
 
 Конфиг для переменной env gitlab ci/cd KUBECONFIG_DEV
@@ -305,13 +327,13 @@ contexts:
 - name: dev-sa-context
   context:
     cluster: kubernetes
-    namespace: test
+    namespace: dev
     user: dev-sa
 current-context: dev-sa-context
 users:
 - name: dev-sa
   user:
-    token: <TOKEN> #  Можно взять из `kubectl get secret dev-sa-token -n test -o jsonpath='{.data.token}' | base64 --decode`
+    token: <TOKEN> #  Можно взять из `kubectl get secret dev-sa-token -n dev -o jsonpath='{.data.token}' | base64 --decode`
 ```
 
 Конфиг для переменной env gitlab ci/cd KUBECONFIG_PROD
@@ -328,11 +350,17 @@ contexts:
 - name: prod-sa-context
   context:
     cluster: kubernetes
-    namespace: test
+    namespace: prod
     user: prod-sa
 current-context: prod-sa-context
 users:
 - name: prod-sa
   user:
-    token: <TOKEN> #  Можно взять из `kubectl get secret prod-sa-token -n test -o jsonpath='{.data.token}' | base64 --decode`
+    token: <TOKEN> #  Можно взять из `kubectl get secret prod-sa-token -n prod -o jsonpath='{.data.token}' | base64 --decode`
+```
+
+Получим данные env **HELM_SECRET**
+
+```bash
+gpg --armor --export-secret-keys fp(finger print)
 ```
