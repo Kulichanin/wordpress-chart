@@ -1,4 +1,16 @@
-# Развертывание инфарструктуры
+# DEVOPS CI/CD подход к автоматизации развертывания приложения [wordpress](https://ru.wordpress.org/)
+
+В данном репозитории с помощью HELM производится развертывание инфраструктуры в кластере k8s.
+
+* NSF Provisioner
+* Cert-manager & nginx-ingress-controller
+* Сборка метрик (Prometheus + Alermanager + Grafana)
+* Сборка логов ((EFK) Elasticsearch, Fluent-bit & Logstash)
+* База данных для приложения Mysql
+* gitlab runner k8s
+* Создание helm манифеста для приложения wordpress
+* Использование HELM SECRET для работы с секретов
+ 
 
 ## NSF Provisioner
 
@@ -363,4 +375,42 @@ users:
 
 ```bash
 gpg --armor --export-secret-keys fp(finger print)
+```
+
+## CI/CD Gitlab 
+
+.gitlab-ci.yml
+```yaml
+.deploy_template:
+  stage: deploy
+  image: cr.yandex/crpak1e8v8fi4qtvc427/docker-images/helm-deployer/20-11-2024
+  rules:
+    - if: $CI_ENVIRONMENT_NAME == "dev"
+      variables:
+        KUBECONFIG: $KUBECONFIG_dev
+    - if: $CI_ENVIRONMENT_NAME == "prod"
+      variables:
+        KUBECONFIG: $KUBECONFIG_prod
+  script:
+    # Setup Kubeconfig
+    - mkdir -p $HOME/.kube
+    - cat $KUBECONFIG > $HOME/.kube/config
+    # Setup GPG for Helm secrets
+    - gpg --allow-secret-key-import --import $HELM_SECRET
+    # Deploy via Helm
+    - helm secrets upgrade --wait --install wordpress --namespace ${CI_ENVIRONMENT_NAME} --values wordpress/secrets.${CI_ENVIRONMENT_NAME}.yaml --values wordpress/values.yaml wordpress/
+
+dev:deploy:
+  extends: .deploy_template
+  environment:
+    name: dev
+    url: https://devfinal.kubefinal.rbr-kubernetes.com
+  when: manual
+
+prod:deploy:
+  extends: .deploy_template
+  environment:
+    name: prod
+    url: https://prodfinal.kubefinal.rbr-kubernetes.com
+  when: manual
 ```
